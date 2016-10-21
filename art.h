@@ -140,16 +140,6 @@ inline uint64_t art_size(art_tree *t) {
 void* art_insert(art_tree *t, const unsigned char *key, int key_len, void *value);
 
 /**
- * Deletes a value from the ART tree
- * @arg t The tree
- * @arg key The key
- * @arg key_len The length of the key
- * @return NULL if the item was not found, otherwise
- * the value pointer is returned.
- */
-void* art_delete(art_tree *t, const unsigned char *key, int key_len);
-
-/**
  * Searches for a value in the ART tree
  * @arg t The tree
  * @arg key The key
@@ -170,32 +160,6 @@ art_leaf* art_minimum(art_tree *t);
  * @return The maximum leaf or NULL
  */
 art_leaf* art_maximum(art_tree *t);
-
-/**
- * Iterates through the entries pairs in the map,
- * invoking a callback for each. The call back gets a
- * key, value for each and returns an integer stop value.
- * If the callback returns non-zero, then the iteration stops.
- * @arg t The tree to iterate over
- * @arg cb The callback function to invoke
- * @arg data Opaque handle passed to the callback
- * @return 0 on success, or the return of the callback.
- */
-int art_iter(art_tree *t, art_callback cb, void *data);
-
-/**
- * Iterates through the entries pairs in the map,
- * invoking a callback for each that matches a given prefix.
- * The call back gets a key, value for each and returns an integer stop value.
- * If the callback returns non-zero, then the iteration stops.
- * @arg t The tree to iterate over
- * @arg prefix The prefix of keys to read
- * @arg prefix_len The length of the prefix
- * @arg cb The callback function to invoke
- * @arg data Opaque handle passed to the callback
- * @return 0 on success, or the return of the callback.
- */
-int art_iter_prefix(art_tree *t, const unsigned char *prefix, int prefix_len, art_callback cb, void *data);
 
 #ifdef __cplusplus
 }
