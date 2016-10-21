@@ -24,7 +24,7 @@ extern "C" {
 # endif
 #endif
 
-typedef int(*art_callback)(void *data, const unsigned char *key, uint32_t key_len, void *value);
+typedef int(*art_callback)(void *data, const unsigned char *key, uint32_t key_len);
 
 /**
  * This struct is included as part
@@ -78,8 +78,7 @@ typedef struct {
  * of arbitrary size, as they include the key.
  */
 typedef struct {
-    void *value;
-    uint32_t key_len;
+    uint8_t key_len;
     unsigned char key[];
 } art_leaf;
 
@@ -117,16 +116,6 @@ int art_tree_destroy(art_tree *t);
  */
 #define destroy_art_tree(...) art_tree_destroy(__VA_ARGS__)
 
-/**
- * Returns the size of the ART tree.
- */
-#ifdef BROKEN_GCC_C99_INLINE
-# define art_size(t) ((t)->size)
-#else
-inline uint64_t art_size(art_tree *t) {
-    return t->size;
-}
-#endif
 
 /**
  * Inserts a new value into the ART tree
@@ -137,7 +126,7 @@ inline uint64_t art_size(art_tree *t) {
  * @return NULL if the item was newly inserted, otherwise
  * the old value pointer is returned.
  */
-void* art_insert(art_tree *t, const unsigned char *key, int key_len, void *value);
+void* art_insert(art_tree *t, const unsigned char *key, int key_len);
 
 /**
  * Searches for a value in the ART tree
