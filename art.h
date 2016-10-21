@@ -147,7 +147,7 @@ void* art_insert(art_tree *t, const unsigned char *key, int key_len, void *value
  * @return NULL if the item was not found, otherwise
  * the value pointer is returned.
  */
-void* art_search(const art_tree *t, const unsigned char *key, int key_len);
+int art_search(const art_tree *t, const unsigned char *key, int key_len);
 
 /**
  * Returns the minimum valued leaf

@@ -1,9 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <stdio.h>
 #include <emmintrin.h>
-#include <assert.h>
 #include "art.h"
 
 /**
@@ -222,7 +220,7 @@ static int leaf_matches(const art_leaf *n, const unsigned char *key, int key_len
  * @return NULL if the item was not found, otherwise
  * the value pointer is returned.
  */
-void* art_search(const art_tree *t, const unsigned char *key, int key_len) {
+int art_search(const art_tree *t, const unsigned char *key, int key_len) {
     art_node **child;
     art_node *n = t->root;
     int prefix_len, depth = 0;
@@ -232,25 +230,25 @@ void* art_search(const art_tree *t, const unsigned char *key, int key_len) {
             n = (art_node*)LEAF_RAW(n);
             // Check if the expanded path matches
             if (!leaf_matches((art_leaf*)n, key, key_len, depth)) {
-                return ((art_leaf*)n)->value;
+                return 1;
             }
-            return NULL;
+            return 0;
         }
 
         // Bail if the prefix does not match
         if (n->partial_len) {
             prefix_len = check_prefix(n, key, key_len, depth);
             if (prefix_len != min(MAX_PREFIX_LEN, n->partial_len))
-                return NULL;
+                return 0;
             depth = depth + n->partial_len;
         }
 
         // Recursively search
         child = find_child(n, key[depth]);
-        n = (child) ? *child : NULL;
+        n = (child) ? *child : 0;
         depth++;
     }
-    return NULL;
+    return 0;
 }
 
 // Find the minimum leaf under a node
@@ -321,7 +319,6 @@ art_leaf* art_maximum(art_tree *t) {
 
 static art_leaf* make_leaf(const unsigned char *key, int key_len, void *value) {
     art_leaf *l = (art_leaf*)malloc(sizeof(art_leaf)+key_len);
-    l->value = value;
     l->key_len = key_len;
     memcpy(l->key, key, key_len);
     return l;
@@ -495,14 +492,6 @@ static void* recursive_insert(art_node *n, art_node **ref, const unsigned char *
     if (IS_LEAF(n)) {
         art_leaf *l = LEAF_RAW(n);
 
-        // Check if we are updating an existing value
-        if (!leaf_matches(l, key, key_len, depth)) {
-            *old = 1;
-            void *old_val = l->value;
-            l->value = value;
-            return old_val;
-        }
-
         // New value, we must split the leaf into a node4
         art_node4 *new_node = (art_node4*)alloc_node(NODE4);
 
@@ -585,52 +574,5 @@ void* art_insert(art_tree *t, const unsigned char *key, int key_len, void *value
     return old;
 }
 
-// Recursively iterates over the tree
-static int recursive_iter(art_node *n, art_callback cb, void *data) {
-    // Handle base cases
-    if (!n) return 0;
-    if (IS_LEAF(n)) {
-        art_leaf *l = LEAF_RAW(n);
-        return cb(data, (const unsigned char*)l->key, l->key_len, l->value);
-    }
 
-    int idx, res;
-    switch (n->type) {
-        case NODE4:
-            for (int i=0; i < n->num_children; i++) {
-                res = recursive_iter(((art_node4*)n)->children[i], cb, data);
-                if (res) return res;
-            }
-            break;
-
-        case NODE16:
-            for (int i=0; i < n->num_children; i++) {
-                res = recursive_iter(((art_node16*)n)->children[i], cb, data);
-                if (res) return res;
-            }
-            break;
-
-        case NODE48:
-            for (int i=0; i < 256; i++) {
-                idx = ((art_node48*)n)->keys[i];
-                if (!idx) continue;
-
-                res = recursive_iter(((art_node48*)n)->children[idx-1], cb, data);
-                if (res) return res;
-            }
-            break;
-
-        case NODE256:
-            for (int i=0; i < 256; i++) {
-                if (!((art_node256*)n)->children[i]) continue;
-                res = recursive_iter(((art_node256*)n)->children[i], cb, data);
-                if (res) return res;
-            }
-            break;
-
-        default:
-            abort();
-    }
-    return 0;
-}
 
