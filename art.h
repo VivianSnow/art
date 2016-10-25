@@ -55,7 +55,7 @@ typedef struct {
 } art_node16;
 
 /**
- * Node with 48 children, but
+ * Node with 36 children, but
  * a full 256 byte field.
  */
 typedef struct {
@@ -78,7 +78,6 @@ typedef struct {
  */
 typedef struct {
     art_node *root;
-    uint64_t size;
 } art_tree;
 
 /**

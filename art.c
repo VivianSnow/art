@@ -291,13 +291,11 @@ static void copy_header(art_node *dest, art_node *src) {
 }
 
 static void add_child36(art_node36 *n, art_node **ref, unsigned char c, void *child) {
-    if (n->n.num_children < 36) {
-        int pos = 0;
-        while (n->children[pos]) pos++;
-        n->children[pos] = (art_node*)child;
-        n->keys[c] = pos + 1;
-        n->n.num_children++;
-    }
+    int pos = 0;
+    while (n->children[pos]) pos++;
+    n->children[pos] = (art_node*)child;
+    n->keys[c] = pos + 1;
+    n->n.num_children++;
 }
 
 static void add_child16(art_node16 *n, art_node **ref, unsigned char c, void *child) {
