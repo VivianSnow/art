@@ -37,13 +37,13 @@ typedef struct {
 } art_node;
 
 /**
- * Small node with only 4 children
+ * Small node with only 2 children
  */
 typedef struct {
     art_node n;
-    unsigned char keys[4];
-    art_node *children[4];
-} art_node4;
+    unsigned char keys[2];
+    art_node *children[2];
+} art_node2;
 
 /**
  * Node with 16 children

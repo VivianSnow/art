@@ -19,7 +19,7 @@ static art_node* alloc_node(uint8_t type) {
     art_node* n;
     switch (type) {
         case NODE4:
-            n = (art_node*)calloc(1, sizeof(art_node4));
+            n = (art_node*)calloc(1, sizeof(art_node2));
             break;
         case NODE16:
             n = (art_node*)calloc(1, sizeof(art_node16));
@@ -57,13 +57,13 @@ static void destroy_node(art_node *n) {
     // Handle each node type
     int i;
     union {
-        art_node4 *p1;
+        art_node2 *p1;
         art_node16 *p2;
         art_node48 *p3;
     } p;
     switch (n->type) {
         case NODE4:
-            p.p1 = (art_node4*)n;
+            p.p1 = (art_node2*)n;
             for (i=0;i<n->num_children;i++) {
                 destroy_node(p.p1->children[i]);
             }
@@ -103,13 +103,13 @@ int art_tree_destroy(art_tree *t) {
 static art_node** find_child(art_node *n, unsigned char c) {
     int i, mask, bitfield;
     union {
-        art_node4 *p1;
+        art_node2 *p1;
         art_node16 *p2;
         art_node48 *p3;
     } p;
     switch (n->type) {
         case NODE4:
-            p.p1 = (art_node4*)n;
+            p.p1 = (art_node2*)n;
             for (i=0;i < n->num_children; i++) {
                 if (p.p1->keys[i] == c)
                     return &p.p1->children[i];
@@ -232,7 +232,7 @@ static art_leaf* minimum(const art_node *n) {
     int idx;
     switch (n->type) {
         case NODE4:
-            return minimum(((art_node4*)n)->children[0]);
+            return minimum(((art_node2*)n)->children[0]);
         case NODE16:
             return minimum(((art_node16*)n)->children[0]);
         case NODE48:
@@ -254,7 +254,7 @@ static art_leaf* maximum(const art_node *n) {
     int idx;
     switch (n->type) {
         case NODE4:
-            return maximum(((art_node4*)n)->children[n->num_children-1]);
+            return maximum(((art_node2*)n)->children[n->num_children-1]);
         case NODE16:
             return maximum(((art_node16*)n)->children[n->num_children-1]);
         case NODE48:
@@ -343,8 +343,8 @@ static void add_child16(art_node16 *n, art_node **ref, unsigned char c, void *ch
     }
 }
 
-static void add_child4(art_node4 *n, art_node **ref, unsigned char c, void *child) {
-    if (n->n.num_children < 4) {
+static void add_child2(art_node2 *n, art_node **ref, unsigned char c, void *child) {
+    if (n->n.num_children < 2) {
         int idx;
         for (idx=0; idx < n->n.num_children; idx++) {
             if (c < n->keys[idx]) break;
@@ -378,7 +378,7 @@ static void add_child4(art_node4 *n, art_node **ref, unsigned char c, void *chil
 static void add_child(art_node *n, art_node **ref, unsigned char c, void *child) {
     switch (n->type) {
         case NODE4:
-            return add_child4((art_node4*)n, ref, c, child);
+            return add_child2((art_node2*)n, ref, c, child);
         case NODE16:
             return add_child16((art_node16*)n, ref, c, child);
         case NODE48:
@@ -425,7 +425,7 @@ static void* recursive_insert(art_node *n, art_node **ref, const unsigned char *
         art_leaf *l = LEAF_RAW(n);
 
         // New value, we must split the leaf into a node4
-        art_node4 *new_node = (art_node4*)alloc_node(NODE4);
+        art_node2 *new_node = (art_node2*)alloc_node(NODE4);
 
         // Create a new leaf
         art_leaf *l2 = make_leaf(key, key_len);
@@ -436,8 +436,8 @@ static void* recursive_insert(art_node *n, art_node **ref, const unsigned char *
         memcpy(new_node->n.partial, key+depth, min(MAX_PREFIX_LEN, longest_prefix));
         // Add the leafs to the new node4
         *ref = (art_node*)new_node;
-        add_child4(new_node, ref, l->key[depth+longest_prefix], SET_LEAF(l));
-        add_child4(new_node, ref, l2->key[depth+longest_prefix], SET_LEAF(l2));
+        add_child2(new_node, ref, l->key[depth+longest_prefix], SET_LEAF(l));
+        add_child2(new_node, ref, l2->key[depth+longest_prefix], SET_LEAF(l2));
         return NULL;
     }
 
@@ -451,28 +451,28 @@ static void* recursive_insert(art_node *n, art_node **ref, const unsigned char *
         }
 
         // Create a new node
-        art_node4 *new_node = (art_node4*)alloc_node(NODE4);
+        art_node2 *new_node = (art_node2*)alloc_node(NODE4);
         *ref = (art_node*)new_node;
         new_node->n.partial_len = prefix_diff;
         memcpy(new_node->n.partial, n->partial, min(MAX_PREFIX_LEN, prefix_diff));
 
         // Adjust the prefix of the old node
         if (n->partial_len <= MAX_PREFIX_LEN) {
-            add_child4(new_node, ref, n->partial[prefix_diff], n);
+            add_child2(new_node, ref, n->partial[prefix_diff], n);
             n->partial_len -= (prefix_diff+1);
             memmove(n->partial, n->partial+prefix_diff+1,
                     min(MAX_PREFIX_LEN, n->partial_len));
         } else {
             n->partial_len -= (prefix_diff+1);
             art_leaf *l = minimum(n);
-            add_child4(new_node, ref, l->key[depth+prefix_diff], n);
+            add_child2(new_node, ref, l->key[depth+prefix_diff], n);
             memcpy(n->partial, l->key+depth+prefix_diff+1,
                     min(MAX_PREFIX_LEN, n->partial_len));
         }
 
         // Insert the new leaf
         art_leaf *l = make_leaf(key, key_len);
-        add_child4(new_node, ref, key[depth+prefix_diff], SET_LEAF(l));
+        add_child2(new_node, ref, key[depth+prefix_diff], SET_LEAF(l));
         return NULL;
     }
 
