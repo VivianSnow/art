@@ -462,7 +462,8 @@ static int prefix_mismatch(const art_node *n, const unsigned char *key, int key_
     // If the prefix is short we can avoid finding a leaf
     if (n->partial_len > MAX_PREFIX_LEN) {
         // Prefix is longer than what we've checked, find a leaf
-        art_leaf *l = minimum(n);
+        art_leaf *l = minimum
+                (n);
         max_cmp = min(l->key_len, key_len)- depth;
         for (; idx < max_cmp; idx++) {
             if (l->key[idx+depth] != key[depth+idx])
