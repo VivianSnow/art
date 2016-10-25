@@ -9,7 +9,6 @@ extern "C" {
 #define NODE4   1
 #define NODE16  2
 #define NODE48  3
-#define NODE256 4
 
 #define MAX_PREFIX_LEN 10
 
@@ -31,8 +30,8 @@ typedef int(*art_callback)(void *data, const unsigned char *key, uint32_t key_le
  * of all the various node sizes
  */
 typedef struct {
-    uint8_t type;
-    uint8_t num_children;
+    uint8_t type:2;
+    uint8_t num_children:6;
     uint32_t partial_len;
     unsigned char partial[MAX_PREFIX_LEN];
 } art_node;
