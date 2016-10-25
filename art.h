@@ -138,17 +138,6 @@ void* art_insert(art_tree *t, const unsigned char *key, int key_len);
  */
 int art_search(const art_tree *t, const unsigned char *key, int key_len);
 
-/**
- * Returns the minimum valued leaf
- * @return The minimum leaf or NULL
- */
-art_leaf* art_minimum(art_tree *t);
-
-/**
- * Returns the maximum valued leaf
- * @return The maximum leaf or NULL
- */
-art_leaf* art_maximum(art_tree *t);
 
 #ifdef __cplusplus
 }

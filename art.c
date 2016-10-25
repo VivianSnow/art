@@ -27,9 +27,6 @@ static art_node* alloc_node(uint8_t type) {
         case NODE48:
             n = (art_node*)calloc(1, sizeof(art_node48));
             break;
-        case NODE256:
-            n = (art_node*)calloc(1, sizeof(art_node256));
-            break;
         default:
             abort();
     }
@@ -63,7 +60,6 @@ static void destroy_node(art_node *n) {
         art_node4 *p1;
         art_node16 *p2;
         art_node48 *p3;
-        art_node256 *p4;
     } p;
     switch (n->type) {
         case NODE4:
@@ -84,14 +80,6 @@ static void destroy_node(art_node *n) {
             p.p3 = (art_node48*)n;
             for (i=0;i<n->num_children;i++) {
                 destroy_node(p.p3->children[i]);
-            }
-            break;
-
-        case NODE256:
-            p.p4 = (art_node256*)n;
-            for (i=0;i<256;i++) {
-                if (p.p4->children[i])
-                    destroy_node(p.p4->children[i]);
             }
             break;
 
@@ -118,7 +106,6 @@ static art_node** find_child(art_node *n, unsigned char c) {
         art_node4 *p1;
         art_node16 *p2;
         art_node48 *p3;
-        art_node256 *p4;
     } p;
     switch (n->type) {
         case NODE4:
@@ -157,12 +144,6 @@ static art_node** find_child(art_node *n, unsigned char c) {
             i = p.p3->keys[c];
             if (i)
                 return &p.p3->children[i-1];
-            break;
-
-        case NODE256:
-            p.p4 = (art_node256*)n;
-            if (p.p4->children[c])
-                return &p.p4->children[c];
             break;
 
         default:
@@ -259,10 +240,6 @@ static art_leaf* minimum(const art_node *n) {
             while (!((art_node48*)n)->keys[idx]) idx++;
             idx = ((art_node48*)n)->keys[idx] - 1;
             return minimum(((art_node48*)n)->children[idx]);
-        case NODE256:
-            idx=0;
-            while (!((art_node256*)n)->children[idx]) idx++;
-            return minimum(((art_node256*)n)->children[idx]);
         default:
             abort();
     }
@@ -285,27 +262,9 @@ static art_leaf* maximum(const art_node *n) {
             while (!((art_node48*)n)->keys[idx]) idx--;
             idx = ((art_node48*)n)->keys[idx] - 1;
             return maximum(((art_node48*)n)->children[idx]);
-        case NODE256:
-            idx=255;
-            while (!((art_node256*)n)->children[idx]) idx--;
-            return maximum(((art_node256*)n)->children[idx]);
         default:
             abort();
     }
-}
-
-/**
- * Returns the minimum valued leaf
- */
-art_leaf* art_minimum(art_tree *t) {
-    return minimum((art_node*)t->root);
-}
-
-/**
- * Returns the maximum valued leaf
- */
-art_leaf* art_maximum(art_tree *t) {
-    return maximum((art_node*)t->root);
 }
 
 static art_leaf* make_leaf(const unsigned char *key, int key_len) {
@@ -331,12 +290,6 @@ static void copy_header(art_node *dest, art_node *src) {
     memcpy(dest->partial, src->partial, min(MAX_PREFIX_LEN, src->partial_len));
 }
 
-static void add_child256(art_node256 *n, art_node **ref, unsigned char c, void *child) {
-    (void)ref;
-    n->n.num_children++;
-    n->children[c] = (art_node*)child;
-}
-
 static void add_child48(art_node48 *n, art_node **ref, unsigned char c, void *child) {
     if (n->n.num_children < 48) {
         int pos = 0;
@@ -344,17 +297,6 @@ static void add_child48(art_node48 *n, art_node **ref, unsigned char c, void *ch
         n->children[pos] = (art_node*)child;
         n->keys[c] = pos + 1;
         n->n.num_children++;
-    } else {
-        art_node256 *new_node = (art_node256*)alloc_node(NODE256);
-        for (int i=0;i<256;i++) {
-            if (n->keys[i]) {
-                new_node->children[i] = n->children[n->keys[i] - 1];
-            }
-        }
-        copy_header((art_node*)new_node, (art_node*)n);
-        *ref = (art_node*)new_node;
-        free(n);
-        add_child256(new_node, ref, c, child);
     }
 }
 
@@ -441,8 +383,6 @@ static void add_child(art_node *n, art_node **ref, unsigned char c, void *child)
             return add_child16((art_node16*)n, ref, c, child);
         case NODE48:
             return add_child48((art_node48*)n, ref, c, child);
-        case NODE256:
-            return add_child256((art_node256*)n, ref, c, child);
         default:
             abort();
     }
