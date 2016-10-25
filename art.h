@@ -30,9 +30,9 @@ typedef int(*art_callback)(void *data, const unsigned char *key, uint32_t key_le
  * of all the various node sizes
  */
 typedef struct {
-    uint8_t type:2;
-    uint8_t num_children:6;
-    uint32_t partial_len;
+    uint8_t type:2; //We only have 3 type node now!
+    uint8_t num_children:6; //Max num_children is 36, thus we can store in 6 bits.
+    uint8_t partial_len; //Max length of key is 101,and partical_len must smaller than it.
     unsigned char partial[MAX_PREFIX_LEN];
 } art_node;
 
