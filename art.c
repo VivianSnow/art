@@ -162,7 +162,7 @@ static inline int min(int a, int b) {
  * the key and node.
  */
 static int check_prefix(const art_node *n, const unsigned char *key, int key_len, int depth) {
-    int max_cmp = min(min(n->partial_len, MAX_PREFIX_LEN), key_len - depth);
+    int max_cmp = min(n->partial_len, key_len - depth);
     int idx;
     for (idx=0; idx < max_cmp; idx++) {
         if (n->partial[idx] != key[depth+idx])
@@ -210,7 +210,7 @@ int art_search(const art_tree *t, const unsigned char *key, int key_len) {
         // Bail if the prefix does not match
         if (n->partial_len) {
             prefix_len = check_prefix(n, key, key_len, depth);
-            if (prefix_len != min(MAX_PREFIX_LEN, n->partial_len))
+            if (prefix_len != n->partial_len)
                 return 0;
             depth = depth + n->partial_len;
         }
@@ -287,7 +287,7 @@ static int longest_common_prefix(art_leaf *l1, art_leaf *l2, int depth) {
 static void copy_header(art_node *dest, art_node *src) {
     dest->num_children = src->num_children;
     dest->partial_len = src->partial_len;
-    memcpy(dest->partial, src->partial, min(MAX_PREFIX_LEN, src->partial_len));
+    memcpy(dest->partial, src->partial, src->partial_len);
 }
 
 static void add_child36(art_node36 *n, art_node **ref, unsigned char c, void *child) {
@@ -390,24 +390,13 @@ static void add_child(art_node *n, art_node **ref, unsigned char c, void *child)
  * Calculates the index at which the prefixes mismatch
  */
 static int prefix_mismatch(const art_node *n, const unsigned char *key, int key_len, int depth) {
-    int max_cmp = min(min(MAX_PREFIX_LEN, n->partial_len), key_len - depth);
+    int max_cmp = min(n->partial_len, key_len - depth);
     int idx;
     for (idx=0; idx < max_cmp; idx++) {
         if (n->partial[idx] != key[depth+idx])
             return idx;
     }
 
-    // If the prefix is short we can avoid finding a leaf
-    if (n->partial_len > MAX_PREFIX_LEN) {
-        // Prefix is longer than what we've checked, find a leaf
-        art_leaf *l = minimum
-                (n);
-        max_cmp = min(l->key_len, key_len)- depth;
-        for (; idx < max_cmp; idx++) {
-            if (l->key[idx+depth] != key[depth+idx])
-                return idx;
-        }
-    }
     return idx;
 }
 
@@ -431,7 +420,7 @@ static void* recursive_insert(art_node *n, art_node **ref, const unsigned char *
         // Determine longest prefix
         int longest_prefix = longest_common_prefix(l, l2, depth);
         new_node->n.partial_len = longest_prefix;
-        memcpy(new_node->n.partial, key+depth, min(MAX_PREFIX_LEN, longest_prefix));
+        memcpy(new_node->n.partial, key+depth, longest_prefix);
         // Add the leafs to the new node2
         *ref = (art_node*)new_node;
         add_child2(new_node, ref, l->key[depth+longest_prefix], SET_LEAF(l));
@@ -452,21 +441,12 @@ static void* recursive_insert(art_node *n, art_node **ref, const unsigned char *
         art_node2 *new_node = (art_node2*)alloc_node(NODE2);
         *ref = (art_node*)new_node;
         new_node->n.partial_len = prefix_diff;
-        memcpy(new_node->n.partial, n->partial, min(MAX_PREFIX_LEN, prefix_diff));
+        memcpy(new_node->n.partial, n->partial, prefix_diff);
 
         // Adjust the prefix of the old node
-        if (n->partial_len <= MAX_PREFIX_LEN) {
-            add_child2(new_node, ref, n->partial[prefix_diff], n);
-            n->partial_len -= (prefix_diff+1);
-            memmove(n->partial, n->partial+prefix_diff+1,
-                    min(MAX_PREFIX_LEN, n->partial_len));
-        } else {
-            n->partial_len -= (prefix_diff+1);
-            art_leaf *l = minimum(n);
-            add_child2(new_node, ref, l->key[depth+prefix_diff], n);
-            memcpy(n->partial, l->key+depth+prefix_diff+1,
-                    min(MAX_PREFIX_LEN, n->partial_len));
-        }
+        add_child2(new_node, ref, n->partial[prefix_diff], n);
+        n->partial_len -= (prefix_diff+1);
+        memmove(n->partial, n->partial+prefix_diff+1, n->partial_len);
 
         // Insert the new leaf
         art_leaf *l = make_leaf(key, key_len);

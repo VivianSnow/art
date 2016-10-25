@@ -10,8 +10,6 @@ extern "C" {
 #define NODE16  2
 #define NODE36  3
 
-#define MAX_PREFIX_LEN 10
-
 #if defined(__GNUC__) && !defined(__clang__)
 # if __STDC_VERSION__ >= 199901L && 402 == (__GNUC__ * 100 + __GNUC_MINOR__)
 /*
@@ -35,7 +33,8 @@ typedef struct {
     uint8_t partial_len;
     //Max length of key is 101,and partical_len must smaller than it,
     // thus we alter partical_len from uint32_int to uint8_int
-    unsigned char partial[MAX_PREFIX_LEN];
+    unsigned char partial[4];
+    //From observation we find that max_patrial_len no more than 4
 } art_node;
 
 /**
