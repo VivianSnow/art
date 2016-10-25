@@ -6,9 +6,9 @@
 extern "C" {
 #endif
 
-#define NODE4   1
+#define NODE2   1
 #define NODE16  2
-#define NODE48  3
+#define NODE36  3
 
 #define MAX_PREFIX_LEN 10
 
@@ -61,16 +61,8 @@ typedef struct {
 typedef struct {
     art_node n;
     unsigned char keys[256];
-    art_node *children[48];
-} art_node48;
-
-/**
- * Full node with 256 children
- */
-typedef struct {
-    art_node n;
-    art_node *children[256];
-} art_node256;
+    art_node *children[36];
+} art_node36;
 
 /**
  * Represents a leaf. These are
