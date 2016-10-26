@@ -22,7 +22,7 @@ int art_from_file_mmap(char* filename)
     size_t searchsz;
     size_t copysz;
     off_t fsz = 0;
-    char *src;
+    char *src, *map_start;
     char *s_remain = NULL;
     struct stat sbuf;
     char *point;
@@ -38,6 +38,7 @@ int art_from_file_mmap(char* filename)
         else
             copysz = sbuf.st_size - fsz;
         src = (char *) mmap(0, copysz, PROT_READ, MAP_SHARED, fdin, fsz);
+        mem_start = src;
         searchsz = copysz;
 
         while (point = memchr(src, '\n', searchsz)) {
@@ -48,13 +49,13 @@ int art_from_file_mmap(char* filename)
             if (s_remain) {
                 s_remain = strcat(s_remain, s);
                 int len = strlen(s_remain);
-                art_insert(&t, (unsigned char*)s_remain, len, "1");
+                art_insert(&t, (unsigned char*)s_remain, len);
                 free(s_remain);
                 s_remain = NULL;
             }
             else{
                 int len = strlen(s);
-                art_insert(&t, (unsigned char*)s, len, "1");
+                art_insert(&t, (unsigned char*)s, len);
             }
         }
         if (copysz == COPYINCR) {
@@ -62,7 +63,7 @@ int art_from_file_mmap(char* filename)
             s_remain = memcpy(s_remain, src, searchsz);
             s_remain[searchsz] = '\0';
         }
-        munmap(src, copysz);
+        munmap(mem_start, copysz);
         fsz += copysz;
     }
 }
@@ -96,7 +97,7 @@ void check_from_file(char *filename)
 
 int main()
 {
-    art_from_file_mmap("/home/viviansnow/data/data2.txt");
-    check_from_file("/home/viviansnow/data/checklist.dat");
+    art_from_file_mmap("/home/viviansnow/data2.txt");
+    check_from_file("/home/viviansnow/checklist.txt");
     return 0;
 }
